@@ -30,6 +30,12 @@ with open(os.path.join(MODELS_DIR, "evidence_refs.json"), "r") as f:
 with open(os.path.join(MODELS_DIR, "population_baseline.json"), "r") as f:
     pop_baseline = json.load(f)
 
+# -------------------------------
+# Simple in-memory cache
+# -------------------------------
+USER_CACHE = {}
+CACHE_TTL_SECONDS = 60  # you can change (e.g., 30–120)
+
 
 # -------------------------------
 # Feature columns
@@ -45,6 +51,76 @@ FEATURE_COLS = [
 ]
 
 MIN_EVENTS_REQUIRED = 5
+
+FEATURE_LABELS = {
+    "account_age_days": "account age",
+    "activity_duration_days": "activity duration",
+    "activity_rate": "activity rate",
+    "mean_inter_event_minutes": "average time between actions",
+    "std_inter_event_minutes": "timing variability",
+    "inter_event_cv": "interaction irregularity",
+    "burst_index": "burst activity",
+}
+
+REASON_TEMPLATES = {
+    "activity_rate_high": "Unusually high activity rate compared with normal users",
+    "activity_rate_low": "Unusually low activity rate compared with normal users",
+    "mean_inter_event_minutes_low": "Actions are occurring unusually quickly",
+    "mean_inter_event_minutes_high": "Long gaps between actions compared with typical behaviour",
+    "std_inter_event_minutes_high": "Action timing is highly variable",
+    "inter_event_cv_high": "Interaction timing is unusually irregular",
+    "burst_index_high": "Behaviour shows bursty concentrated activity",
+    "account_age_days_low": "Account is relatively new compared with typical users",
+    "activity_duration_days_low": "Behaviour history is still limited",
+}
+
+
+def _baseline_stat(feat: str, key: str, default=None):
+    feat_base = pop_baseline.get(feat, {})
+    return feat_base.get(key, default)
+
+
+def _reason_from_feature(feat: str, value: float) -> str | None:
+    median = _baseline_stat(feat, "median")
+    q90 = _baseline_stat(feat, "q90")
+    q95 = _baseline_stat(feat, "q95")
+
+    if median is None:
+        return None
+
+    if feat == "activity_rate":
+        if q95 is not None and value >= q95:
+            return REASON_TEMPLATES["activity_rate_high"]
+        if value < median:
+            return REASON_TEMPLATES["activity_rate_low"]
+
+    if feat == "mean_inter_event_minutes":
+        if value < median:
+            return REASON_TEMPLATES["mean_inter_event_minutes_low"]
+        if q95 is not None and value >= q95:
+            return REASON_TEMPLATES["mean_inter_event_minutes_high"]
+
+    if feat == "std_inter_event_minutes":
+        if q90 is not None and value >= q90:
+            return REASON_TEMPLATES["std_inter_event_minutes_high"]
+
+    if feat == "inter_event_cv":
+        if q90 is not None and value >= q90:
+            return REASON_TEMPLATES["inter_event_cv_high"]
+
+    if feat == "burst_index":
+        if q90 is not None and value >= q90:
+            return REASON_TEMPLATES["burst_index_high"]
+
+    if feat == "account_age_days":
+        if value < median:
+            return REASON_TEMPLATES["account_age_days_low"]
+
+    if feat == "activity_duration_days":
+        if value < median:
+            return REASON_TEMPLATES["activity_duration_days_low"]
+
+    return None
 
 
 # -------------------------------
@@ -98,20 +174,36 @@ def dynamic_alpha(p_sup: np.ndarray, alpha_min=0.5, alpha_max=0.85):
 # -------------------------------
 def explain_user(row, baseline, top_k=3, dev_threshold=1.5):
     def deviation(value, base):
-        return abs(value - base["median"]) / (base["iqr"] + 1e-9)
+        median = base.get("median", 0.0)
+        iqr = base.get("iqr", 1.0)
+        return abs(value - median) / (iqr + 1e-9)
 
-    scores = []
-    for c in FEATURE_COLS:
-        scores.append((c, deviation(row[c], baseline[c])))
+    scored = []
+    for feat in FEATURE_COLS:
+        feat_base = baseline.get(feat, {})
+        score = deviation(row[feat], feat_base)
+        scored.append((feat, score, row[feat]))
 
-    scores.sort(key=lambda x: x[1], reverse=True)
+    scored.sort(key=lambda x: x[1], reverse=True)
 
     reasons = []
-    for feat, score in scores:
+    seen = set()
+
+    for feat, score, value in scored:
         if score < dev_threshold:
             continue
-        direction = "high" if row[feat] >= baseline[feat]["median"] else "low"
-        reasons.append(f"{feat} is unusually {direction}")
+
+        reason = _reason_from_feature(feat, value)
+
+        if not reason:
+            direction = "high" if value >= baseline.get(feat, {}).get("median", 0) else "low"
+            pretty = FEATURE_LABELS.get(feat, feat.replace("_", " "))
+            reason = f"Unusual {pretty} ({direction} compared with normal users)"
+
+        if reason not in seen:
+            reasons.append(reason)
+            seen.add(reason)
+
         if len(reasons) >= top_k:
             break
 
@@ -121,34 +213,84 @@ def explain_user(row, baseline, top_k=3, dev_threshold=1.5):
 # -------------------------------
 # Moderation Suggestions
 # -------------------------------
-def generate_actions(result):
+# -------------------------------
+# Moderation Suggestions
+# -------------------------------
+def generate_actions(row, risk_level, reasons):
     actions = []
     seen = set()
 
-    risk = result.get("risk_level", "")
-    reasons = result.get("top_reasons", [])
+    def get_q(feat, key):
+        return pop_baseline.get(feat, {}).get(key)
 
-    # 🔴 Risk-based rule
-    if risk in ["HIGH", "CRITICAL"]:
+    activity_rate = float(row.get("activity_rate", 0))
+    inter_event_cv = float(row.get("inter_event_cv", 0))
+    mean_gap = float(row.get("mean_inter_event_minutes", 0))
+    burst_index = float(row.get("burst_index", 0))
+    account_age = float(row.get("account_age_days", 0))
+
+    q95_activity = get_q("activity_rate", "q95")
+    q90_cv = get_q("inter_event_cv", "q90")
+    q95_gap = get_q("mean_inter_event_minutes", "q95")
+    q90_burst = get_q("burst_index", "q90")
+
+    # 1. High activity spike
+    if q95_activity is not None and activity_rate >= q95_activity and "LIMIT_POSTING" not in seen:
         actions.append({
             "action": "LIMIT_POSTING",
-            "reason": "High risk behaviour detected",
+            "reason": "User activity rate is extremely high compared with normal users",
             "enforceable": True
         })
         seen.add("LIMIT_POSTING")
 
-    # 🧠 Reason-based rules
+    # 2. Highly irregular timing
+    if q90_cv is not None and inter_event_cv >= q90_cv and "LIMIT_COMMENTS" not in seen:
+        actions.append({
+            "action": "LIMIT_COMMENTS",
+            "reason": "Interaction timing is highly irregular",
+            "enforceable": True
+        })
+        seen.add("LIMIT_COMMENTS")
+
+    # 3. Bursty concentrated behaviour
+    if q90_burst is not None and burst_index >= q90_burst and "LIMIT_POSTING" not in seen:
+        actions.append({
+            "action": "LIMIT_POSTING",
+            "reason": "Behaviour shows unusually bursty activity",
+            "enforceable": True
+        })
+        seen.add("LIMIT_POSTING")
+
+    # 4. Unusual long action gaps
+    if q95_gap is not None and mean_gap >= q95_gap and "LIMIT_INTERACTIONS" not in seen:
+        actions.append({
+            "action": "LIMIT_INTERACTIONS",
+            "reason": "Unusual delay pattern detected between actions",
+            "enforceable": False
+        })
+        seen.add("LIMIT_INTERACTIONS")
+
+    # 5. High-risk new account
+    if risk_level in ["HIGH", "CRITICAL"] and account_age < 7 and "REQUIRE_CAPTCHA" not in seen:
+        actions.append({
+            "action": "REQUIRE_CAPTCHA",
+            "reason": "High-risk behaviour detected from a newly created account",
+            "enforceable": False
+        })
+        seen.add("REQUIRE_CAPTCHA")
+
+    # 6. Critical fallback escalation
+    if risk_level == "CRITICAL" and "TEMP_SUSPEND" not in seen:
+        actions.append({
+            "action": "TEMP_SUSPEND",
+            "reason": "Critical risk level indicates strong bot-like behaviour",
+            "enforceable": False
+        })
+        seen.add("TEMP_SUSPEND")
+
+    # 7. Reason-based support when statistical rules do not fire
     for reason in reasons:
-
-        if "inter_event" in reason and "LIMIT_POSTING" not in seen:
-            actions.append({
-                "action": "LIMIT_POSTING",
-                "reason": reason,
-                "enforceable": True
-            })
-            seen.add("LIMIT_POSTING")
-
-        if "activity_rate" in reason and "LIMIT_COMMENTS" not in seen:
+        if "activity rate" in reason.lower() and "LIMIT_COMMENTS" not in seen:
             actions.append({
                 "action": "LIMIT_COMMENTS",
                 "reason": reason,
@@ -156,14 +298,37 @@ def generate_actions(result):
             })
             seen.add("LIMIT_COMMENTS")
 
-    return actions
+        if "irregular" in reason.lower() and "LIMIT_POSTING" not in seen:
+            actions.append({
+                "action": "LIMIT_POSTING",
+                "reason": reason,
+                "enforceable": True
+            })
+            seen.add("LIMIT_POSTING")
 
+        if len(actions) >= 3:
+            break
+
+    return actions[:3]
 
 # ============================================================
 # 🔥 CORE FUNCTION (MAIN TRANSFORMATION)
 # ============================================================
 
 def predict_user(user_dict: dict):
+
+    user_id = int(user_dict.get("user_id", -1))
+    now = datetime.now(timezone.utc)
+
+    # -------------------------------
+    # Cache check
+    # -------------------------------
+    if user_id in USER_CACHE:
+        cached = USER_CACHE[user_id]
+        age = (now - cached["timestamp"]).total_seconds()
+
+        if age < CACHE_TTL_SECONDS:
+            return cached["data"]
 
     df = pd.DataFrame([user_dict])
 
@@ -228,28 +393,67 @@ def predict_user(user_dict: dict):
     else:
         reasons = explain_user(df.iloc[0], pop_baseline)
 
+    # Strong fallback if nothing detected
+    if not reasons:
+        reasons = []
+
+        for feat in FEATURE_COLS:
+            value = df.iloc[0][feat]
+            median = pop_baseline.get(feat, {}).get("median", None)
+
+            if median is None:
+                continue
+
+            direction = "higher" if value >= median else "lower"
+            pretty = FEATURE_LABELS.get(feat, feat.replace("_", " "))
+
+            reasons.append(f"{pretty.capitalize()} is {direction} than typical users")
+
+            if len(reasons) >= 2:
+                break
+
+        # Final safety fallback
+        if not reasons:
+            reasons = ["Unusual behavioural pattern detected compared with normal users"]
+
     # -------------------------------
     # Actions
     # -------------------------------
-    result_temp = {
-        "risk_level": level,
-        "top_reasons": reasons
-    }
+    row_dict = df.iloc[0].to_dict()
+    if level == "LOW":
+        actions = []
+    else:
+        actions = generate_actions(row_dict, level, reasons)
 
-    actions = generate_actions(result_temp)
+        if not actions and level in ["HIGH", "CRITICAL"]:
+            actions = [{
+                "action": "MONITOR",
+                "reason": "Suspicious behaviour detected, further observation is required",
+                "enforceable": False
+            }]
 
     # -------------------------------
     # FINAL OUTPUT
     # -------------------------------
-    return {
-        "user_id": int(user_dict.get("user_id", -1)),
+    result = {
+        "user_id": user_id,
         "risk_score": round(score, 2),
         "risk_level": level,
         "evidence_score": round(ev, 3),
         "top_reasons": reasons,
         "actions": actions,
-        "timestamp": datetime.now(timezone.utc).isoformat()
+        "timestamp": now.isoformat()
     }
+
+    # -------------------------------
+    # Save to cache
+    # -------------------------------
+    USER_CACHE[user_id] = {
+        "data": result,
+        "timestamp": now
+    }
+
+    return result
 
 
 # -------------------------------
