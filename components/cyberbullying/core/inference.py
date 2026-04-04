@@ -27,21 +27,12 @@ CLIP_CLASSIFIER_PATH = MODELS_DIR / "cyberbullying_clip_logreg.pkl"
 TEXT_MODEL_PATH = MODELS_DIR / "distilbert_text_only_clean.pt"
 COMMENT_MODEL_PATH = MODELS_DIR / "best_distilbert.pt"
 TOXIC_WORDS_PATH = ASSETS_DIR / "toxic_words.txt"
+SEVERE_WORDS_PATH = ASSETS_DIR / "severe_words.txt"
 
 CLIP_MODEL_NAME = "openai/clip-vit-base-patch32"
 DISTILBERT_MODEL_NAME = "distilbert-base-uncased"
 
 DEVICE = "cuda" if torch.cuda.is_available() else "cpu"
-
-# =========================================================
-# SEVERE WORDS
-# =========================================================
-
-SEVERE_WORDS = {
-    "cunt","nigger","faggot","retard",
-    "kill yourself","kys","rape","rapist",
-    "die bitch","die cunt","hang yourself","fuck"
-}
 
 # =========================================================
 # LOAD TOXIC WORDS
@@ -70,6 +61,31 @@ def load_toxic_words(path: Path) -> List[str]:
 
 
 TOXIC_WORDS = load_toxic_words(TOXIC_WORDS_PATH)
+
+# =========================================================
+# LOAD SEVERE WORDS (UPDATED)
+# =========================================================
+
+def load_severe_words(path: Path) -> set:
+
+    words = set()
+
+    with open(path, "r", encoding="utf-8") as f:
+        for line in f:
+
+            w = line.strip().lower()
+
+            if not w:
+                continue
+
+            words.add(w)
+
+    print(f"[INFO] Loaded severe words with {len(words)} entries")
+
+    return words
+
+
+SEVERE_WORDS = load_severe_words(SEVERE_WORDS_PATH)
 
 # =========================================================
 # LOAD MODELS
