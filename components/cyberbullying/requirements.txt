@@ -1,0 +1,10 @@
+fastapi
+uvicorn
+easyocr
+transformers
+pillow
+numpy
+scikit-learn
+torch
+rapidfuzz
+python-multipart

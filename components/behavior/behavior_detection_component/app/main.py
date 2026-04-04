@@ -31,7 +31,7 @@ app.add_middleware(
     allow_headers=["*"],
 )
 
-# 📁 Resolve base path safely
+#  Resolve base path safely
 BASE_DIR = os.path.dirname(os.path.dirname(os.path.abspath(__file__)))
 
 RUNTIME_PATH = os.path.join(BASE_DIR, "assets", "runtime")
@@ -96,14 +96,14 @@ def run_full_scan():
                 "timestamp": datetime.utcnow().isoformat()
             })
 
-        print(f"✅ Scan completed for {len(results)} users")
+        print(f" Scan completed for {len(results)} users")
 
     except Exception as e:
-        print("❌ Scan error:", e)
+        print(" Scan error:", e)
 
 def background_loop():
     while True:
-        print("🔄 Running background scan...")
+        print(" Running background scan...")
         run_full_scan()
         time.sleep(1800)  # every 30 min
 
@@ -169,13 +169,13 @@ def root():
 def get_user_result(user_id: int):
 
     try:
-        # 🔥 Step 1: get live features
+        #  Step 1: get live features
         users = fetch_features()
 
-        # 🔥 Step 2: run model
+        #  Step 2: run model
         results = predict_batch(users)
 
-        # 🔥 Step 3: find user
+        #  Step 3: find user
         for row in results:
             if row["user_id"] == user_id:
 
@@ -186,7 +186,7 @@ def get_user_result(user_id: int):
                     "timestamp": datetime.utcnow().isoformat()
                 }
 
-                # 🔥 Step 4: save history
+                #  Step 4: save history
                 save_history(result)
 
                 return result
@@ -225,9 +225,9 @@ def get_user_explanation(user_id: int):
 def get_all_users():
 
     try:
-        users = fetch_features()   # 🔥 get live features from DB
+        users = fetch_features()   #  get live features from DB
 
-        results = predict_batch(users)  # 🔥 run model
+        results = predict_batch(users)  #  run model
 
         return results
 
