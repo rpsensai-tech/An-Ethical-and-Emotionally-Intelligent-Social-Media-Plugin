@@ -117,7 +117,7 @@ def compute_features_for_user(times_utc: pd.Series) -> dict:
 def main():
     # ---------- Connect ----------
     conn = mysql.connector.connect(**DB_CONFIG)
-    print("✅ Connected to OSSN database")
+    print(" Connected to OSSN database")
 
     # ---------- Load users ----------
     # OSSN: ossn_users.guid (user id), ossn_users.time_created (unix seconds)
@@ -228,7 +228,7 @@ def main():
     # Replace inf/nan
     out_df = out_df.replace([np.inf, -np.inf], np.nan).fillna(0.0)
 
-    print("\n✅ Final Feature Table (matches trained feature set)")
+    print("\n Final Feature Table (matches trained feature set)")
     print(out_df.head(20))
 
 

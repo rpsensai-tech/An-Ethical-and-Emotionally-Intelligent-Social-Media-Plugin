@@ -312,7 +312,7 @@ def generate_actions(row, risk_level, reasons):
     return actions[:3]
 
 # ============================================================
-# 🔥 CORE FUNCTION (MAIN TRANSFORMATION)
+#  CORE FUNCTION (MAIN TRANSFORMATION)
 # ============================================================
 
 def predict_user(user_dict: dict):
