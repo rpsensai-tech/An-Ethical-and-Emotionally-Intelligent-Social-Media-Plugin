@@ -1,5 +1,6 @@
 from fastapi import FastAPI
-from api.routes import router
+from .api.routes import router
+
 
 app = FastAPI(
     title="AI Moderation Service",

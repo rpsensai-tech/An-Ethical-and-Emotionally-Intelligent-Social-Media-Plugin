@@ -4,7 +4,8 @@ import shutil
 import os
 import tempfile
 
-from core.inference import predict_meme, predict_comment_text
+from components.cyberbullying.core.inference import predict_meme, predict_comment_text
+
 
 router = APIRouter()
 
