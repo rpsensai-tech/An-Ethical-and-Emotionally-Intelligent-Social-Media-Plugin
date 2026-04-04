@@ -97,7 +97,7 @@ def run_sbert_recommendation():
     # 6. Clear old recs
     for i, user in enumerate(user_ids):
 
-        # 🔥 delete ONLY this user's old recs
+        # delete ONLY this user's old recs
         cur.execute("""
             DELETE FROM ossn_ng_friend_recs 
             WHERE user_guid = %s AND model='SBERT'
