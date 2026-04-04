@@ -24,8 +24,13 @@ HISTORY_FILE = os.path.join(RUNTIME_PATH, "behaviourguard_history.json")
 # =========================================================
 
 def load_restrictions():
+    os.makedirs(RUNTIME_PATH, exist_ok=True)
+
     if not os.path.exists(RESTRICTIONS_FILE):
+        with open(RESTRICTIONS_FILE, "w", encoding="utf-8") as f:
+            json.dump({}, f)
         return {}
+
     try:
         with open(RESTRICTIONS_FILE, "r", encoding="utf-8") as f:
             data = json.load(f)
@@ -39,15 +44,17 @@ def save_restrictions(data):
         json.dump(data, f, indent=2)
 
 def save_history(result):
+    os.makedirs(RUNTIME_PATH, exist_ok=True)
 
-    history = []
+    if not os.path.exists(HISTORY_FILE):
+        with open(HISTORY_FILE, "w", encoding="utf-8") as f:
+            json.dump([], f)
 
-    if os.path.exists(HISTORY_FILE):
-        try:
-            with open(HISTORY_FILE, "r") as f:
-                history = json.load(f)
-        except:
-            history = []
+    try:
+        with open(HISTORY_FILE, "r", encoding="utf-8") as f:
+            history = json.load(f)
+    except Exception:
+        history = []
 
     history.append({
         "user_id": result["user_id"],
@@ -58,9 +65,8 @@ def save_history(result):
 
     history = history[-1000:]
 
-    with open(HISTORY_FILE, "w") as f:
+    with open(HISTORY_FILE, "w", encoding="utf-8") as f:
         json.dump(history, f, indent=2)
-
 
 # =========================================================
 # REQUEST MODELS
@@ -192,24 +198,36 @@ def get_all_users():
 
 @router.get("/user/{user_id}/restrictions")
 def get_user_restrictions(user_id: int):
+    os.makedirs(RUNTIME_PATH, exist_ok=True)
 
     if not os.path.exists(RESTRICTIONS_FILE):
+        with open(RESTRICTIONS_FILE, "w", encoding="utf-8") as f:
+            json.dump({}, f)
         return {}
 
-    with open(RESTRICTIONS_FILE, "r") as f:
-        data = json.load(f)
+    try:
+        with open(RESTRICTIONS_FILE, "r", encoding="utf-8") as f:
+            data = json.load(f)
+    except Exception:
+        data = {}
 
     return data.get(str(user_id), {})
 
 
 @router.get("/user/{user_id}/history")
 def get_user_history(user_id: int):
+    os.makedirs(RUNTIME_PATH, exist_ok=True)
 
     if not os.path.exists(HISTORY_FILE):
+        with open(HISTORY_FILE, "w", encoding="utf-8") as f:
+            json.dump([], f)
         return []
 
-    with open(HISTORY_FILE, "r") as f:
-        history = json.load(f)
+    try:
+        with open(HISTORY_FILE, "r", encoding="utf-8") as f:
+            history = json.load(f)
+    except Exception:
+        history = []
 
     user_history = [h for h in history if h["user_id"] == user_id]
 
