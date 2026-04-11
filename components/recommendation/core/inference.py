@@ -4,6 +4,7 @@ import mysql.connector
 from collections import defaultdict
 from sentence_transformers import SentenceTransformer
 from sklearn.metrics.pairwise import cosine_similarity
+from models.sbert_model import get_model
 
 DB_CONFIG = {
     "host": "localhost",
@@ -13,15 +14,7 @@ DB_CONFIG = {
 }
 
 
-model = None
-
-def get_model():
-    global model
-    if model is None:
-        print("Loading SBERT model...")  # debug
-        model = SentenceTransformer('all-MiniLM-L6-v2')
-        print("Model loaded!")
-    return model
+model = get_model()
 
 CATEGORIES = {
         "Memes": ["meme", "funny", "joke"],
