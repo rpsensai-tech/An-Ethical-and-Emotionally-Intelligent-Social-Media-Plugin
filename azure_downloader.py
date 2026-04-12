@@ -1,6 +1,12 @@
 import os
 from pathlib import Path
-from azure.storage.blob import BlobServiceClient
+
+# Check if Azure Blob storage is mounted - skip all downloads if so
+AZURE_MOUNT_PATH = Path("/app/mounted_models")
+AZURE_MOUNT_DETECTED = AZURE_MOUNT_PATH.exists() and AZURE_MOUNT_PATH.is_dir()
+
+if AZURE_MOUNT_DETECTED:
+    print("[INFO] Azure Blob Storage mount detected. Skipping SDK downloads.")
 
 def download_blob_if_not_exists(blob_name: str, destination_path: Path):
     """
@@ -10,6 +16,10 @@ def download_blob_if_not_exists(blob_name: str, destination_path: Path):
         blob_name (str): The full path (including folders) to the blob in the container.
         destination_path (Path): The local file path where the blob should be saved.
     """
+    # Skip all downloads if Azure mount is detected (files accessed via symlinks)
+    if AZURE_MOUNT_DETECTED:
+        return
+    
     if destination_path.exists():
         print(f"[INFO] File already exists, skipping download: {destination_path}")
         return
@@ -21,6 +31,9 @@ def download_blob_if_not_exists(blob_name: str, destination_path: Path):
     if not connection_string:
         # Silently return if connection string is not set
         return
+    
+    # Import Azure SDK only when needed (avoids unnecessary imports)
+    from azure.storage.blob import BlobServiceClient
 
     container_name = "models"
 
