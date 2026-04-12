@@ -28,8 +28,8 @@ RUN pip install uv && \
 # Copy the rest of the application's code into the container at /app
 COPY . .
 
-# Make the entrypoint script executable
-RUN chmod +x entrypoint.sh
+# Make the entrypoint script executable and fix Windows line endings
+RUN sed -i 's/\r$//' entrypoint.sh && chmod +x entrypoint.sh
 
 # Command to run the application using the entrypoint script
 CMD ["./entrypoint.sh"]
