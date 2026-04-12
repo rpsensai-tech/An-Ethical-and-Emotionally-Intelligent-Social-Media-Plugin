@@ -11,7 +11,7 @@ if [ -d "/app/mounted_models" ]; then
     rm -rf /app/components/cyberbullying/models
     rm -rf /app/components/cyberbullying/assets
     rm -rf /app/components/emotion/models
-    rm -rf /app/components/recommendation/model_config
+    rm -rf /app/components/recommendation/models
     
     # Create required parent directories just in case
     mkdir -p /app/components/behavior/behavior_detection_component
