@@ -6,20 +6,21 @@ if [ -d "/app/mounted_models" ]; then
     echo "[INFO] Azure Blob Storage mount detected at /app/mounted_models. Creating symlinks..."
     
     # Remove existing empty models directories if they exist, then link
-    rm -rf /app/components/behavior/models
+    # Behavior component is at: /app/components/behavior/behavior_detection_component/models
+    rm -rf /app/components/behavior/behavior_detection_component/models
     rm -rf /app/components/cyberbullying/models
     rm -rf /app/components/cyberbullying/assets
     rm -rf /app/components/emotion/models
-    rm -rf /app/components/recommendation/model_config # based on recent rename
+    rm -rf /app/components/recommendation/model_config
     
     # Create required parent directories just in case
-    mkdir -p /app/components/behavior
+    mkdir -p /app/components/behavior/behavior_detection_component
     mkdir -p /app/components/cyberbullying
     mkdir -p /app/components/emotion
     mkdir -p /app/components/recommendation
 
-    # Link the folders
-    ln -s /app/mounted_models/behavior/models /app/components/behavior/models
+    # Link the folders to match where the code expects models
+    ln -s /app/mounted_models/behavior/models /app/components/behavior/behavior_detection_component/models
     ln -s /app/mounted_models/cyberbullying/models /app/components/cyberbullying/models
     ln -s /app/mounted_models/cyberbullying/assets /app/components/cyberbullying/assets
     ln -s /app/mounted_models/emotion/models /app/components/emotion/models
