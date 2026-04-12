@@ -1,3 +1,11 @@
+import logging
+# Completely silence huggingface/transformers logging config to wipe out API chatter
+logging.getLogger("httpx").setLevel(logging.WARNING)
+logging.getLogger("transformers").setLevel(logging.ERROR)
+
+import os
+os.environ["HF_HUB_DISABLE_SYMLINKS_WARNING"] = "1"
+
 from fastapi import FastAPI
 from fastapi.middleware.cors import CORSMiddleware
 import threading
@@ -6,6 +14,12 @@ from contextlib import asynccontextmanager
 import logging
 import sys
 from pathlib import Path
+
+import warnings
+from sklearn.exceptions import InconsistentVersionWarning
+import transformers
+warnings.filterwarnings("ignore", category=InconsistentVersionWarning)
+transformers.logging.set_verbosity_error()
 
 # Add component paths to sys.path
 root_dir = Path(__file__).parent
@@ -53,30 +67,29 @@ def download_emotion_assets():
     print("[INFO] Checking for emotion models and assets...")
     
     # Define local paths
-    slang_dict_path = Path(components_dir) / "emotion/app/data/slang_dictionary.json"
+    slang_dict_path = components_dir / "emotion/app/data/slang_dictionary.json"
     
-    # This assumes you know the model filenames. You might need to list them from the blob storage
-    # or have a manifest file. For now, let's assume a few common ones.
-    # NOTE: You will need to add ALL your model files from 'emotion/models/text/' here.
-    text_models_dir = Path(components_dir) / "emotion/assets/models/text"
-    # Example model files - replace with your actual model names
-    model_files_to_download = [
-        "config.json",
-        "pytorch_model.bin",
-        "special_tokens_map.json",
-        "tokenizer_config.json",
-        "vocab.txt"
-    ]
-
-    # Download assets
+    # 1. Download slang dictionary (if it existed in Azure, but it's local only right now, so this will naturally skip/fail gracefully)
     download_blob_if_not_exists("emotion/data/slang_dictionary.json", slang_dict_path)
-
-    # Download models
-    for model_file in model_files_to_download:
-        blob_path = f"emotion/models/text/{model_file}"
-        local_path = text_models_dir / model_file
-        download_blob_if_not_exists(blob_path, local_path)
-
+    
+    # 2. Download AffectNet weights
+    affectnet_dir = components_dir / "emotion/models/affectnet"
+    download_blob_if_not_exists("emotion/models/affectnet/affectnet_emotion_model_weights.pth", affectnet_dir / "affectnet_emotion_model_weights.pth")
+    download_blob_if_not_exists("emotion/models/affectnet/affectnet_emotion_model_checkpoint.pth", affectnet_dir / "affectnet_emotion_model_checkpoint.pth")
+    
+    # 3. Download Text Emotion 'default' model
+    default_text_dir = components_dir / "emotion/models/text/default"
+    for filename in ["metadata.json", "model.pt"]:
+        download_blob_if_not_exists(f"emotion/models/text/default/{filename}", default_text_dir / filename)
+        
+    for filename in ["merges.txt", "special_tokens_map.json", "tokenizer.json", "tokenizer_config.json", "vocab.json"]:
+        download_blob_if_not_exists(f"emotion/models/text/default/tokenizer/{filename}", default_text_dir / "tokenizer" / filename)
+        
+    # 4. Download Sarcasm Detector
+    sarcasm_text_dir = components_dir / "emotion/models/text/sarcasm-detector"
+    for filename in ["config.json", "merges.txt", "model.safetensors", "special_tokens_map.json", "tokenizer.json", "tokenizer_config.json", "vocab.json"]:
+        download_blob_if_not_exists(f"emotion/models/text/sarcasm-detector/{filename}", sarcasm_text_dir / filename)
+    
     print("[INFO] Emotion assets check complete.")
 
 
@@ -138,7 +151,10 @@ def create_app() -> FastAPI:
 
     return app
 
-app = create_app()
+fastapi_app = create_app()
+
+# Also alias it back to 'app' so that things like 'uvicorn main:app' still work
+app = fastapi_app
 
 if __name__ == "__main__":
-    uvicorn.run("main:app", host="0.0.0.0", port=8000, reload=True)
+    uvicorn.run("main:fastapi_app", host="0.0.0.0", port=8000, reload=False)

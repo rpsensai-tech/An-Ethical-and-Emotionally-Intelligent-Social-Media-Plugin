@@ -19,10 +19,7 @@ def download_blob_if_not_exists(blob_name: str, destination_path: Path):
 
     connection_string = os.environ.get("AZURE_STORAGE_CONNECTION_STRING")
     if not connection_string:
-        print("[ERROR] AZURE_STORAGE_CONNECTION_STRING environment variable not set.")
-        # In a real app, you might want to raise an exception here
-        # For this setup, we'll allow it to fail silently if the var isn't set,
-        # assuming local files might be used for local dev.
+        # Silently return if connection string is not set
         return
 
     container_name = "models"

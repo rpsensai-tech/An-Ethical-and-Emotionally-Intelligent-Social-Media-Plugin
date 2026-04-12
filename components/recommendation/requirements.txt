@@ -1,6 +1,0 @@
-fastapi
-uvicorn
-sentence-transformers
-scikit-learn
-mysql-connector-python
-numpy

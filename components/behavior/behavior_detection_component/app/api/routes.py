@@ -3,8 +3,8 @@ from pydantic import BaseModel
 import json
 import os
 from datetime import datetime
-from assets.ossn_adapter import fetch_features
-from core.inference import predict_user, predict_batch
+from ...assets.ossn_adapter import fetch_features
+from ...core.inference import predict_user, predict_batch
 
 router = APIRouter()
 

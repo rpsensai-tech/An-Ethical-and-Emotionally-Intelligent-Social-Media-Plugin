@@ -37,7 +37,7 @@ class SarcasmDetectionService:
         # Model paths
         if model_path is None:
             # Default to sarcasm-detector in models directory
-            model_path = Path(__file__).parent.parent.parent.parent / "models" / "text" / "sarcasm-detector"
+            model_path = Path(__file__).parent.parent.parent / "models" / "text" / "sarcasm-detector"
         
         self.model_path = Path(model_path)
         self.model = None

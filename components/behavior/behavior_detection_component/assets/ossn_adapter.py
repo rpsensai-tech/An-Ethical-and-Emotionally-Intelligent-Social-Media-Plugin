@@ -116,8 +116,12 @@ def compute_features_for_user(times_utc: pd.Series) -> dict:
 # ---------------------------
 def main():
     # ---------- Connect ----------
-    conn = mysql.connector.connect(**DB_CONFIG)
-    print(" Connected to OSSN database")
+    try:
+        conn = mysql.connector.connect(**DB_CONFIG)
+        print(" Connected to OSSN database")
+    except Exception as e:
+        print(f" Database connection failed: {e}. Skipping feature fetch.")
+        return pd.DataFrame()
 
     # ---------- Load users ----------
     # OSSN: ossn_users.guid (user id), ossn_users.time_created (unix seconds)

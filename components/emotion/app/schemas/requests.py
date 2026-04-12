@@ -10,6 +10,7 @@ from typing import List, Dict, Any, Optional
 
 class TextPredictionRequest(BaseModel):
     """Request for text emotion prediction"""
+    model_config = {"protected_namespaces": ()}
     text: str = Field(..., description="Text content to analyze", min_length=1, max_length=5000)
     threshold: float = Field(default=0.3, description="Emotion probability threshold", ge=0.0, le=1.0)
     model_name: Optional[str] = Field(default="default", description="Model name to use")
@@ -17,6 +18,7 @@ class TextPredictionRequest(BaseModel):
 
 class TextExplainRequest(BaseModel):
     """Request for text explainability"""
+    model_config = {"protected_namespaces": ()}
     text: str = Field(..., description="Text content to explain", min_length=1, max_length=5000)
     model_name: Optional[str] = Field(default="default", description="Model name to use")
     method: Optional[str] = Field(default="attention", description="Explanation method (attention, lime, shap)")
@@ -76,6 +78,8 @@ class EmotionItem(BaseModel):
 
 class TextPredictionResponse(BaseModel):
     """Response for text emotion prediction"""
+    model_config = {"protected_namespaces": ()}
+    
     text: str
     emotions: List[EmotionItem]
     significant_emotions: Dict[str, float]
@@ -147,6 +151,7 @@ class EmojiSuggestionResponse(BaseModel):
 
 class ModelInfo(BaseModel):
     """Model information"""
+    model_config = {"protected_namespaces": ()}
     model_name: str
     base_model: Optional[str] = None
     backbone: Optional[str] = None

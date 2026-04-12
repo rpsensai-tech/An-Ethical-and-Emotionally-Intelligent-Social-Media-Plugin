@@ -138,7 +138,10 @@ def load_model():
         )
         
         # Load trained weights
-        checkpoint_path = 'models/affectnet/affectnet_emotion_model_weights.pth'
+        import os
+        base_dir = os.path.dirname(os.path.dirname(os.path.dirname(__file__)))
+        checkpoint_path = os.path.join(base_dir, 'models', 'affectnet', 'affectnet_emotion_model_weights.pth')
+        
         checkpoint = torch.load(checkpoint_path, map_location=device)
         model.load_state_dict(checkpoint)
         

@@ -1,14 +1,18 @@
 from datetime import datetime
 import time
 
-from assets.ossn_adapter import fetch_features
-from core.inference import predict_batch
-from app.api.routes import save_history
+from ...assets.ossn_adapter import fetch_features
+from ...core.inference import predict_batch
+from ..api.routes import save_history
 
 
 def run_full_scan():
     try:
         users = fetch_features()
+        if not users:
+            print(" No user features fetched. Skipping inference.")
+            return
+
         results = predict_batch(users)
 
         for r in results:
