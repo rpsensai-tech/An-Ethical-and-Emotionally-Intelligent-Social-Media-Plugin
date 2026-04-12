@@ -1,5 +1,4 @@
 import logging
-# Completely silence huggingface/transformers logging config to wipe out API chatter
 logging.getLogger("httpx").setLevel(logging.WARNING)
 logging.getLogger("transformers").setLevel(logging.ERROR)
 
