@@ -11,6 +11,10 @@ env:
   IMAGE_NAME: "social-media-plugin"
   AZURE_WEBAPP_NAME: "sensai-social-media-plugin" 
 
+concurrency:
+  group: production-deployment
+  cancel-in-progress: true
+
 jobs:
   build-and-push:
     runs-on: ubuntu-latest
