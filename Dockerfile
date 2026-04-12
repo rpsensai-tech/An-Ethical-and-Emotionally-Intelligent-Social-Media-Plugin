@@ -31,5 +31,8 @@ COPY . .
 # Make the entrypoint script executable and fix Windows line endings
 RUN sed -i 's/\r$//' entrypoint.sh && chmod +x entrypoint.sh
 
+# Expose port 8000 for Azure App Service to detect
+EXPOSE 8000
+
 # Command to run the application using the entrypoint script
 CMD ["./entrypoint.sh"]
