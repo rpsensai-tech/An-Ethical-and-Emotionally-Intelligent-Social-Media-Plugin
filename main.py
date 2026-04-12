@@ -120,6 +120,14 @@ def create_app() -> FastAPI:
         allow_headers=["*"],
     )
 
+    @app.get("/", tags=["Health"])
+    def root():
+        return {"status": "healthy", "service": "SensAI Social Media Plugin", "version": "1.0.0"}
+    
+    @app.get("/health", tags=["Health"])
+    def health():
+        return {"status": "healthy"}
+
     # Include routers from each component with a prefix
     app.include_router(behavior_routes.router, prefix="/behavior", tags=["Behavior Detection"])
     app.include_router(cyberbullying_routes.router, prefix="/cyberbullying", tags=["Cyberbullying Detection"])
