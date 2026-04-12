@@ -12,7 +12,7 @@ import sys
 
 from assets.configs.emotion_config import emotion_config
 
-from components.emotion.app.models.text_emotion_classifier import TextModelManager, TextEmotionClassifier
+from components.emotion.app.model_config.text_emotion_classifier import TextModelManager, TextEmotionClassifier
 from ..utils.preprocessing import TextPreprocessor, EmotionMapper
 from ..utils.device_manager import device_manager
 from transformers import AutoTokenizer
@@ -253,7 +253,7 @@ class TextPredictionService:
                 top_emotion_idx = 0
             
             # Initialize explainer
-            from ..models.explainer import TextModelExplainer
+            from ..model_config.explainer import TextModelExplainer
             explainer = TextModelExplainer(
                 self.model_manager.current_model,
                 self.model_manager.current_tokenizer,
