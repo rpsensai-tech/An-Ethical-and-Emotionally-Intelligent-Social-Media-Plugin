@@ -14,6 +14,7 @@ from transformers import (
     DistilBertTokenizerFast,
     DistilBertForSequenceClassification,
 )
+from azure_downloader import download_blob_if_not_exists
 
 # =========================================================
 # PATHS (UPDATED FOR PROJECT STRUCTURE)
@@ -33,6 +34,25 @@ CLIP_MODEL_NAME = "openai/clip-vit-base-patch32"
 DISTILBERT_MODEL_NAME = "distilbert-base-uncased"
 
 DEVICE = "cuda" if torch.cuda.is_available() else "cpu"
+
+# =========================================================
+# AZURE BLOB DOWNLOAD
+# =========================================================
+
+def download_cyberbullying_assets():
+    """Downloads all models and assets for the cyberbullying component."""
+    print("[INFO] Checking for cyberbullying models and assets...")
+    # Models
+    download_blob_if_not_exists("cyberbullying/models/cyberbullying_clip_logreg.pkl", CLIP_CLASSIFIER_PATH)
+    download_blob_if_not_exists("cyberbullying/models/distilbert_text_only_clean.pt", TEXT_MODEL_PATH)
+    download_blob_if_not_exists("cyberbullying/models/best_distilbert.pt", COMMENT_MODEL_PATH)
+    # Assets
+    download_blob_if_not_exists("cyberbullying/assets/toxic_words.txt", TOXIC_WORDS_PATH)
+    download_blob_if_not_exists("cyberbullying/assets/severe_words.txt", SEVERE_WORDS_PATH)
+    print("[INFO] Cyberbullying assets check complete.")
+
+# Trigger the download on module load
+download_cyberbullying_assets()
 
 # =========================================================
 # LOAD TOXIC WORDS

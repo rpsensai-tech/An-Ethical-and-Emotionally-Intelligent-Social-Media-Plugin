@@ -1,0 +1,107 @@
+{
+  "model_name": "bye",
+  "base_model": "roberta-base",
+  "num_emotions": 28,
+  "dropout_rate": 0.1,
+  "emotions": [
+    "admiration",
+    "amusement",
+    "anger",
+    "annoyance",
+    "approval",
+    "caring",
+    "confusion",
+    "curiosity",
+    "desire",
+    "disappointment",
+    "disapproval",
+    "disgust",
+    "embarrassment",
+    "excitement",
+    "fear",
+    "gratitude",
+    "grief",
+    "joy",
+    "love",
+    "nervousness",
+    "optimism",
+    "pride",
+    "realization",
+    "relief",
+    "remorse",
+    "sadness",
+    "surprise",
+    "neutral"
+  ],
+  "device": "cuda",
+  "metrics": {
+    "accuracy": 0.4686693697014375,
+    "f1_score": 0.46936420447723143,
+    "precision": 0.6329557284120291,
+    "recall": 0.4194046620945743,
+    "training_history": [
+      {
+        "epoch": 1,
+        "loss": 0.05477672070264816,
+        "accuracy": 0.9821429252624512,
+        "time": 2677.799873113632,
+        "metrics": {
+          "train_loss": 0.10885559722325472,
+          "train_accuracy": 0.3226906242801198,
+          "train_precision": 0.5084080307012984,
+          "train_recall": 0.19252239252409595,
+          "train_f1": 0.25152788965435113,
+          "val_loss": 0.08562799072002664,
+          "val_accuracy": 0.4495023958717287,
+          "val_precision": 0.5812742781088913,
+          "val_recall": 0.36720133047667064,
+          "val_f1": 0.4184930647415054
+        }
+      },
+      {
+        "epoch": 2,
+        "loss": 0.02140178717672825,
+        "accuracy": 1.0,
+        "time": 2955.764918088913,
+        "metrics": {
+          "train_loss": 0.0819516221497842,
+          "train_accuracy": 0.45342087076710436,
+          "train_precision": 0.6261670530880724,
+          "train_recall": 0.3406655297819055,
+          "train_f1": 0.4105194357563695,
+          "val_loss": 0.08327806195353761,
+          "val_accuracy": 0.44452635458901585,
+          "val_precision": 0.6130637975537194,
+          "val_recall": 0.3871617559033678,
+          "val_f1": 0.4505477351103879
+        }
+      },
+      {
+        "epoch": 3,
+        "loss": 0.047041766345500946,
+        "accuracy": 0.9821429252624512,
+        "time": 3147.835879087448,
+        "metrics": {
+          "train_loss": 0.07304162099990409,
+          "train_accuracy": 0.5065883436996084,
+          "train_precision": 0.6678120514920461,
+          "train_recall": 0.4172995402533813,
+          "train_f1": 0.49522426372799044,
+          "val_loss": 0.08316883288104744,
+          "val_accuracy": 0.4686693697014375,
+          "val_precision": 0.6329557284120291,
+          "val_recall": 0.4194046620945743,
+          "val_f1": 0.46936420447723143
+        }
+      }
+    ]
+  },
+  "model_info": {
+    "model_name": "roberta-base",
+    "num_emotions": 28,
+    "dropout_rate": 0.1,
+    "num_parameters": 124667164,
+    "num_trainable_parameters": 124667164
+  },
+  "saved_at": "2025-10-09 02:15:25.880955"
+}

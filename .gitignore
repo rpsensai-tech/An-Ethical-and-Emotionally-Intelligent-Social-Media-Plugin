@@ -201,9 +201,19 @@ cython_debug/
 .cursorignore
 .cursorindexingignore
 
-# Marimo
-marimo/_static/
-marimo/_lsp/
-__marimo__/
+# Custom Ignores
+components/behavior/behavior_detection_component/assets/runtime/*.json
+components/behavior/behavior_detection_component/test_adapter.py
+components/behavior/behavior_detection_component/test_inference.py
+components/cyberbullying/models/
+components/cyberbullying/*.pt
+components/cyberbullying/*.pkl
+components/emotion/*.safetensors
+components/emotion/*.pth
+components/emotion/.venv
+.env
 
-.idea/
+# Models
+*.safetensors
+*.pth
+*.pt

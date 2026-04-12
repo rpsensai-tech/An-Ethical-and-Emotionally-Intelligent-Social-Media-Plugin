@@ -1,0 +1,25 @@
+{
+    "model_name": "default",
+    "backbone": "resnet50",
+    "dataset": "fer2013",
+    "num_emotions": 8,
+    "dropout_rate": 0.5,
+    "emotions": [
+        "happy",
+        "sad",
+        "angry",
+        "fear",
+        "surprise",
+        "disgust",
+        "neutral",
+        "other"
+    ],
+    "input_size": [
+        224,
+        224
+    ],
+    "description": "Best performing model from FER2013 training with 8 emotion classes",
+    "source": "image-project/models/best_model.pth",
+    "date_created": "2025",
+    "notes": "Transferred from image-project POC. Use for facial emotion recognition. Trained with 8 emotions including 'other' class for multi-label classification."
+}

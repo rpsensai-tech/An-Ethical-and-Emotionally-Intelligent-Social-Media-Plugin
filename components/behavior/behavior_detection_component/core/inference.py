@@ -4,30 +4,62 @@ import joblib
 import numpy as np
 import pandas as pd
 from datetime import datetime, timezone
+from azure_downloader import download_blob_if_not_exists
+from pathlib import Path
 
 # ============================================================
 # BehaviourGuard API-READY ENGINE
 # ============================================================
 
-BASE_DIR = os.path.dirname(os.path.abspath(__file__))
-MODELS_DIR = os.path.join(BASE_DIR, "..", "models")
+# Use Path for better path management
+BASE_DIR = Path(__file__).resolve().parent.parent
+MODELS_DIR = BASE_DIR / "models"
+
+# Define local paths for all models and assets
+EARLY_XGB_PATH = MODELS_DIR / "early_xgb_model.pkl"
+EARLY_SCALER_PATH = MODELS_DIR / "early_scaler.pkl"
+XGB_PATH = MODELS_DIR / "xgb_behavior_model.pkl"
+SCALER_PATH = MODELS_DIR / "behavior_scaler.pkl"
+ISO_PATH = MODELS_DIR / "iso_model.pkl"
+ANOM_SCALER_PATH = MODELS_DIR / "anom_scaler.pkl"
+REFS_PATH = MODELS_DIR / "evidence_refs.json"
+BASELINE_PATH = MODELS_DIR / "population_baseline.json"
+
+def download_behavior_assets():
+    """Downloads all models and assets for the behavior component."""
+    print("[INFO] Checking for behavior models and assets...")
+    # Models
+    download_blob_if_not_exists("behavior/models/early_xgb_model.pkl", EARLY_XGB_PATH)
+    download_blob_if_not_exists("behavior/models/early_scaler.pkl", EARLY_SCALER_PATH)
+    download_blob_if_not_exists("behavior/models/xgb_behavior_model.pkl", XGB_PATH)
+    download_blob_if_not_exists("behavior/models/behavior_scaler.pkl", SCALER_PATH)
+    download_blob_if_not_exists("behavior/models/iso_model.pkl", ISO_PATH)
+    download_blob_if_not_exists("behavior/models/anom_scaler.pkl", ANOM_SCALER_PATH)
+    # Assets
+    download_blob_if_not_exists("behavior/models/evidence_refs.json", REFS_PATH)
+    download_blob_if_not_exists("behavior/models/population_baseline.json", BASELINE_PATH)
+    print("[INFO] Behavior assets check complete.")
+
+# Trigger the download on module load
+download_behavior_assets()
+
 
 # -------------------------------
 # Load Models (ONLY ONCE)
 # -------------------------------
-early_xgb = joblib.load(os.path.join(MODELS_DIR, "early_xgb_model.pkl"))
-early_scaler = joblib.load(os.path.join(MODELS_DIR, "early_scaler.pkl"))
+early_xgb = joblib.load(EARLY_XGB_PATH)
+early_scaler = joblib.load(EARLY_SCALER_PATH)
 
-xgb = joblib.load(os.path.join(MODELS_DIR, "xgb_behavior_model.pkl"))
-scaler = joblib.load(os.path.join(MODELS_DIR, "behavior_scaler.pkl"))
+xgb = joblib.load(XGB_PATH)
+scaler = joblib.load(SCALER_PATH)
 
-iso = joblib.load(os.path.join(MODELS_DIR, "iso_model.pkl"))
-anom_scaler = joblib.load(os.path.join(MODELS_DIR, "anom_scaler.pkl"))
+iso = joblib.load(ISO_PATH)
+anom_scaler = joblib.load(ANOM_SCALER_PATH)
 
-with open(os.path.join(MODELS_DIR, "evidence_refs.json"), "r") as f:
+with open(REFS_PATH, "r") as f:
     refs = json.load(f)
 
-with open(os.path.join(MODELS_DIR, "population_baseline.json"), "r") as f:
+with open(BASELINE_PATH, "r") as f:
     pop_baseline = json.load(f)
 
 # -------------------------------

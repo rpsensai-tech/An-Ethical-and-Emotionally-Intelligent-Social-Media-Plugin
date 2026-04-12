@@ -1,6 +1,0 @@
-__pycache__/
-*.pyc
-.env
-assets/runtime/*.json
-test_adapter.py
-test_inference.py
