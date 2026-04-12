@@ -9,3 +9,11 @@ tests/
 cache/
 .github/
 .env
+
+# Ignore massive Machine Learning checkpoints (they are downloaded at runtime from Azure)
+**/*.pt
+**/*.pth
+**/*.safetensors
+**/*.pkl
+**/*.bin
+components/**/models/*
