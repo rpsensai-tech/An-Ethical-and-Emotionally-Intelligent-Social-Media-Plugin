@@ -1,6 +1,6 @@
 from fastapi import APIRouter
 import mysql.connector
-from core.inference import run_sbert_recommendation
+from components.recommendation.core.inference import run_sbert_recommendation
 
 router = APIRouter()
 
