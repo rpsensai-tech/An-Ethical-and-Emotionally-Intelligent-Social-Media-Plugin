@@ -62,27 +62,15 @@ logging.basicConfig(
 logger = logging.getLogger(__name__)
 
 def download_emotion_assets():
-    """Downloads all models and assets for the emotion component."""
+    """Downloads all models and assets for the emotion component.
+    
+    Note: When Azure Blob Storage is mounted at /app/mounted_models,
+    downloads are automatically skipped by azure_downloader.py.
+    Models are accessed via symlinks created by entrypoint.sh.
+    """
     print("[INFO] Checking for emotion models and assets...")
-    
-    # Define local paths
-    slang_dict_path = components_dir / "emotion/app/data/slang_dictionary.json"
-    
-    # 1. Download slang dictionary (if it existed in Azure, but it's local only right now, so this will naturally skip/fail gracefully)
-    
-    # 2. Download AffectNet weights
-    affectnet_dir = components_dir / "emotion/models/affectnet"
-    
-    # 3. Download Text Emotion 'default' model
-    default_text_dir = components_dir / "emotion/models/text/default"
-    for filename in ["metadata.json", "model.pt"]:
-        
-    for filename in ["merges.txt", "special_tokens_map.json", "tokenizer.json", "tokenizer_config.json", "vocab.json"]:
-        
-    # 4. Download Sarcasm Detector
-    sarcasm_text_dir = components_dir / "emotion/models/text/sarcasm-detector"
-    for filename in ["config.json", "merges.txt", "model.safetensors", "special_tokens_map.json", "tokenizer.json", "tokenizer_config.json", "vocab.json"]:
-    
+    # Downloads are handled by azure_downloader when needed
+    # With mounted storage, this function is essentially a no-op
     print("[INFO] Emotion assets check complete.")
 
 
