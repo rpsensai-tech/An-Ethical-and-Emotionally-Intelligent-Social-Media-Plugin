@@ -1,14 +1,6 @@
 from fastapi import APIRouter
 import mysql.connector
-
-# Support multiple import contexts (monolith app, component package, legacy flat path).
-try:
-    from ...core.inference import run_sbert_recommendation
-except ImportError:
-    try:
-        from components.recommendation.core.inference import run_sbert_recommendation
-    except ImportError:
-        from core.inference import run_sbert_recommendation
+from components.recommendation.core.inference import run_sbert_recommendation
 
 router = APIRouter()
 

@@ -4,15 +4,7 @@ import mysql.connector
 from collections import defaultdict
 from sentence_transformers import SentenceTransformer
 from sklearn.metrics.pairwise import cosine_similarity
-
-# Support multiple import contexts (monolith app, component package, legacy flat path).
-try:
-    from ...models.sbert_model import get_model
-except ImportError:
-    try:
-        from components.recommendation.models.sbert_model import get_model
-    except ImportError:
-        from models.sbert_model import get_model
+from components.recommendation.models.sbert_model import get_model
 
 DB_CONFIG = {
     "host": "localhost",
