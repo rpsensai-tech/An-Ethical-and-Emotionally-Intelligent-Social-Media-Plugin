@@ -20,7 +20,10 @@ ENV SENTENCE_TRANSFORMERS_HOME=/app/cache/sentence_transformers
 COPY requirements.txt .
 
 # Install uv and then use it to install packages
-RUN pip install uv && uv pip install --system --no-cache -r requirements.txt
+# BEST PRACTICE: Install CPU-only PyTorch first to avoid downloading 4.5GB of unused CUDA GPU binaries
+RUN pip install uv && \
+    uv pip install --system --no-cache torch torchvision torchaudio --index-url https://download.pytorch.org/whl/cpu && \
+    uv pip install --system --no-cache -r requirements.txt
 
 # Copy the rest of the application's code into the container at /app
 COPY . .
