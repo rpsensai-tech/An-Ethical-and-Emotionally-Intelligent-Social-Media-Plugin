@@ -4,6 +4,11 @@ FROM python:3.11-slim
 # Set the working directory in the container
 WORKDIR /app
 
+# Install native system dependencies required by OpenCV (used by EasyOCR)
+RUN apt-get update && \
+    apt-get install -y libgl1 libglib2.0-0 && \
+    rm -rf /var/lib/apt/lists/*
+
 # Set environment variables for model caching
 # This tells libraries like Hugging Face, Torch, and Sentence-Transformers
 # where to store their downloaded models inside the container.
