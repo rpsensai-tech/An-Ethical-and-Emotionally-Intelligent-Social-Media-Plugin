@@ -12,7 +12,8 @@ import sys
 
 from assets.configs.emotion_config import emotion_config
 
-from components.emotion.app.model_config.text_emotion_classifier import TextModelManager, TextEmotionClassifier
+from ..model_config.text_emotion_classifier import TextModelManager, TextEmotionClassifier
+
 from ..utils.preprocessing import TextPreprocessor, EmotionMapper
 from ..utils.device_manager import device_manager
 from transformers import AutoTokenizer
