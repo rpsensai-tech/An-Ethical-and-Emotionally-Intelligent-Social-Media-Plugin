@@ -28,6 +28,8 @@ RUN pip install uv && \
 # Copy the rest of the application's code into the container at /app
 COPY . .
 
-# Command to run the application
-# Use 0.0.0.0 to expose the port to the network
-CMD ["uvicorn", "main:app", "--host", "0.0.0.0", "--port", "8000"]
+# Make the entrypoint script executable
+RUN chmod +x entrypoint.sh
+
+# Command to run the application using the entrypoint script
+CMD ["./entrypoint.sh"]

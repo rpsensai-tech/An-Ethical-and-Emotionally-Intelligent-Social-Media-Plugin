@@ -53,7 +53,6 @@ from components.emotion.app.services.chat_service import ChatService
 from components.recommendation.app.api import routes as recommendation_routes
 
 # Azure Downloader
-from azure_downloader import download_blob_if_not_exists
 
 logging.basicConfig(
     level=getattr(logging, emotion_main_config.LOG_LEVEL),
@@ -70,25 +69,19 @@ def download_emotion_assets():
     slang_dict_path = components_dir / "emotion/app/data/slang_dictionary.json"
     
     # 1. Download slang dictionary (if it existed in Azure, but it's local only right now, so this will naturally skip/fail gracefully)
-    download_blob_if_not_exists("emotion/data/slang_dictionary.json", slang_dict_path)
     
     # 2. Download AffectNet weights
     affectnet_dir = components_dir / "emotion/models/affectnet"
-    download_blob_if_not_exists("emotion/models/affectnet/affectnet_emotion_model_weights.pth", affectnet_dir / "affectnet_emotion_model_weights.pth")
-    download_blob_if_not_exists("emotion/models/affectnet/affectnet_emotion_model_checkpoint.pth", affectnet_dir / "affectnet_emotion_model_checkpoint.pth")
     
     # 3. Download Text Emotion 'default' model
     default_text_dir = components_dir / "emotion/models/text/default"
     for filename in ["metadata.json", "model.pt"]:
-        download_blob_if_not_exists(f"emotion/models/text/default/{filename}", default_text_dir / filename)
         
     for filename in ["merges.txt", "special_tokens_map.json", "tokenizer.json", "tokenizer_config.json", "vocab.json"]:
-        download_blob_if_not_exists(f"emotion/models/text/default/tokenizer/{filename}", default_text_dir / "tokenizer" / filename)
         
     # 4. Download Sarcasm Detector
     sarcasm_text_dir = components_dir / "emotion/models/text/sarcasm-detector"
     for filename in ["config.json", "merges.txt", "model.safetensors", "special_tokens_map.json", "tokenizer.json", "tokenizer_config.json", "vocab.json"]:
-        download_blob_if_not_exists(f"emotion/models/text/sarcasm-detector/{filename}", sarcasm_text_dir / filename)
     
     print("[INFO] Emotion assets check complete.")
 
