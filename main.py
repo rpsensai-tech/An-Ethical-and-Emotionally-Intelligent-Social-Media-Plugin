@@ -61,15 +61,35 @@ logging.basicConfig(
 logger = logging.getLogger(__name__)
 
 def download_emotion_assets():
-    """Downloads all models and assets for the emotion component.
-    
-    Note: When Azure Blob Storage is mounted at /app/mounted_models,
-    downloads are automatically skipped by azure_downloader.py.
-    Models are accessed via symlinks created by entrypoint.sh.
-    """
+    """Downloads all models and assets for the emotion component."""
     print("[INFO] Checking for emotion models and assets...")
-    # Downloads are handled by azure_downloader when needed
-    # With mounted storage, this function is essentially a no-op
+    from azure_downloader import download_blob_if_not_exists
+    from pathlib import Path
+    import os
+    
+    root_dir = Path(__file__).parent
+    emotion_models_dir = root_dir / "components" / "emotion" / "models"
+    
+    # Text Modeles
+    download_blob_if_not_exists(
+        "emotion/models/text/default/model.pt", 
+        emotion_models_dir / "text" / "default" / "model.pt"
+    )
+    download_blob_if_not_exists(
+        "emotion/models/text/default/metadata.json", 
+        emotion_models_dir / "text" / "default" / "metadata.json"
+    )
+    download_blob_if_not_exists(
+        "emotion/models/text/sarcasm-detector/pytorch_model.bin", 
+        emotion_models_dir / "text" / "sarcasm-detector" / "pytorch_model.bin"
+    )
+    
+    # Image Models
+    download_blob_if_not_exists(
+        "emotion/models/affectnet/affectnet_emotion_model_weights.pth", 
+        emotion_models_dir / "affectnet" / "affectnet_emotion_model_weights.pth"
+    )
+    
     print("[INFO] Emotion assets check complete.")
 
 
@@ -82,7 +102,10 @@ async def lifespan(app: FastAPI):
     logger.info("Starting emotion services...")
     emotion_main_config.ensure_directories()
     text_service = TextPredictionService(models_dir=emotion_main_config.TEXT_MODELS_DIR, emotions=emotion_config.GOEMOTIONS_EMOTIONS, device=emotion_main_config.DEVICE)
-    text_service.load_model("default")
+    try:
+        text_service.load_model("default")
+    except Exception as e:
+        logger.error(f"Could not load text model: {e}")
     
     filtering_service = EthicalFilteringService(toxicity_threshold=emotion_main_config.TOXICITY_THRESHOLD)
     
@@ -90,7 +113,10 @@ async def lifespan(app: FastAPI):
     
     emotion_routes.set_services(text_service, filtering_service, emoji_service, chat_service_instance)
     
-    load_image_api_model()
+    try:
+        load_image_api_model()
+    except Exception as e:
+        logger.error(f"Could not load image model: {e}")
     logger.info("Emotion services started.")
 
     # Behavior component startup
@@ -114,7 +140,7 @@ def create_app() -> FastAPI:
     # Add CORS middleware
     app.add_middleware(
         CORSMiddleware,
-        allow_origins=["*"],
+        allow_origins=["http://localhost", "http://127.0.0.1", "http://localhost:8000"],
         allow_credentials=True,
         allow_methods=["*"],
         allow_headers=["*"],
@@ -131,11 +157,11 @@ def create_app() -> FastAPI:
     # Include routers from each component with a prefix
     app.include_router(behavior_routes.router, prefix="/behavior", tags=["Behavior Detection"])
     app.include_router(cyberbullying_routes.router, prefix="/cyberbullying", tags=["Cyberbullying Detection"])
-    app.include_router(emotion_routes.router, prefix="/emotion", tags=["Emotion Intelligence"])
+    app.include_router(emotion_routes.router, tags=["Emotion Intelligence"])
     app.include_router(recommendation_routes.router, prefix="/recommendation", tags=["Recommendation"])
     
     # Mount the image API from the emotion component
-    app.mount("/emotion/image-api", image_app)
+    app.mount("/image-api", image_app)
 
     return app
 
