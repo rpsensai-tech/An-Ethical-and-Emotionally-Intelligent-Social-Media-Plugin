@@ -17,7 +17,22 @@ def set_services(text_svc, filtering_svc, emoji_svc=None, chat_svc=None):
     text_service, filtering_service, emoji_service, chat_service = text_svc, filtering_svc, emoji_svc, chat_svc
 
 @router.get("/health", response_model=HealthResponse)
-async def health_check(): return HealthResponse(status="healthy", models_loaded={"text": text_service is not None}, services={"text": text_service is not None})
+async def health_check():
+    chat_available = bool(chat_service)
+    if chat_service and hasattr(chat_service, "get_status"):
+        try:
+            chat_available = bool(chat_service.get_status().get("available", False))
+        except Exception:
+            chat_available = False
+
+    services = {
+        "text": "ready" if text_service else "unavailable",
+        "filtering": "ready" if filtering_service else "unavailable",
+        "emoji": "ready" if emoji_service else "unavailable",
+        "chat": "ready" if chat_available else "unavailable",
+    }
+    device = str(getattr(text_service, "device", "unknown")) if text_service else "unknown"
+    return HealthResponse(status="healthy", version="1.0.0", services=services, device=device)
 
 @router.post("/text/enhanced", response_model=EnhancedTextAnalysisResponse)
 async def analyze_text_enhanced(request: EnhancedTextAnalysisRequest):
@@ -109,4 +124,27 @@ async def suggest_emojis(request: EmojiSuggestionRequest):
 
 @router.post("/chat", response_model=ChatResponse)
 async def chat_with_assistant(request: ChatRequest):
-    return ChatResponse(**await chat_service.process_message(request.message, request.context))
+    try:
+        if not chat_service:
+            return ChatResponse(
+                response="Chat service is unavailable right now.",
+                status="unavailable"
+            )
+
+        conversation_history = [
+            {"role": item.role, "content": item.content}
+            for item in request.conversation_history
+        ]
+
+        result = await chat_service.chat(
+            user_message=request.message,
+            conversation_history=conversation_history,
+            emotion_context=request.emotion_context,
+        )
+        return ChatResponse(**result)
+    except Exception as e:
+        logger.error(f"Chat request failed: {e}")
+        return ChatResponse(
+            response="I am having trouble responding right now. Please try again.",
+            status="error"
+        )
