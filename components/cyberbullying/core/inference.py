@@ -233,8 +233,11 @@ def get_clip_embedding(image_path: str, text: str) -> np.ndarray:
             attention_mask=inputs["attention_mask"]
         )
 
-    image_features = image_features.cpu().numpy()
-    text_features = text_features.cpu().numpy()
+    image_features = image_features.pooler_output
+    image_features = image_features.cpu().detach().numpy()
+
+    text_features = text_features.pooler_output
+    text_features = text_features.cpu().detach().numpy()
 
     embedding = np.concatenate([image_features, text_features], axis=1)
 
