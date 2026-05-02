@@ -10,7 +10,7 @@ DB_CONFIG = {
     "host": "localhost",
     "user": "root",
     "password": "",
-    "database": "ossn",
+    "database": "ossn_plugin_db",
 }
 
 
@@ -56,7 +56,7 @@ def run_sbert_recommendation():
     cur.execute("""
         SELECT owner_guid, title, description
         FROM ossn_object
-        WHERE type='object' AND subtype='post'
+        WHERE type='object'
     """)
     rows = cur.fetchall()
 

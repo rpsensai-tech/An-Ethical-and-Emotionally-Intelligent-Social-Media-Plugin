@@ -8,7 +8,7 @@ DB_CONFIG = {
     "host": "localhost",
     "user": "root",
     "password": "",
-    "database": "ossn",
+    "database": "ossn_plugin_db",
 }
 
 
