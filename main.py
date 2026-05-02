@@ -5,7 +5,7 @@ logging.getLogger("transformers").setLevel(logging.ERROR)
 import os
 os.environ["HF_HUB_DISABLE_SYMLINKS_WARNING"] = "1"
 
-from fastapi import FastAPI
+from fastapi import FastAPI, UploadFile, File
 from fastapi.middleware.cors import CORSMiddleware
 import threading
 import uvicorn
@@ -13,6 +13,7 @@ from contextlib import asynccontextmanager
 import logging
 import sys
 from pathlib import Path
+from typing import List
 
 import warnings
 from sklearn.exceptions import InconsistentVersionWarning
@@ -40,6 +41,7 @@ from components.cyberbullying.app.api import routes as cyberbullying_routes
 
 # Emotion
 from components.emotion.app.api import routes as emotion_routes
+from components.emotion.app.api import image_api as emotion_image_api
 from components.emotion.app.api.image_api import app as image_app, load_model as load_image_api_model
 from components.emotion.assets.configs.config import config as emotion_main_config
 from components.emotion.assets.configs.emotion_config import emotion_config
@@ -82,7 +84,10 @@ async def lifespan(app: FastAPI):
     logger.info("Starting emotion services...")
     emotion_main_config.ensure_directories()
     text_service = TextPredictionService(models_dir=emotion_main_config.TEXT_MODELS_DIR, emotions=emotion_config.GOEMOTIONS_EMOTIONS, device=emotion_main_config.DEVICE)
-    text_service.load_model("default")
+    try:
+        text_service.load_model("default")
+    except Exception as e:
+        logger.error(f"Could not load text model: {e}")
     
     filtering_service = EthicalFilteringService(toxicity_threshold=emotion_main_config.TOXICITY_THRESHOLD)
     
@@ -90,7 +95,10 @@ async def lifespan(app: FastAPI):
     
     emotion_routes.set_services(text_service, filtering_service, emoji_service, chat_service_instance)
     
-    load_image_api_model()
+    try:
+        load_image_api_model()
+    except Exception as e:
+        logger.error(f"Could not load image model: {e}")
     logger.info("Emotion services started.")
 
     # Behavior component startup
@@ -114,7 +122,7 @@ def create_app() -> FastAPI:
     # Add CORS middleware
     app.add_middleware(
         CORSMiddleware,
-        allow_origins=["*"],
+        allow_origins=["http://localhost", "http://127.0.0.1", "http://localhost:8000"],
         allow_credentials=True,
         allow_methods=["*"],
         allow_headers=["*"],
@@ -131,11 +139,20 @@ def create_app() -> FastAPI:
     # Include routers from each component with a prefix
     app.include_router(behavior_routes.router, prefix="/behavior", tags=["Behavior Detection"])
     app.include_router(cyberbullying_routes.router, prefix="/cyberbullying", tags=["Cyberbullying Detection"])
-    app.include_router(emotion_routes.router, prefix="/emotion", tags=["Emotion Intelligence"])
+    app.include_router(emotion_routes.router, tags=["Emotion Intelligence"])
     app.include_router(recommendation_routes.router, prefix="/recommendation", tags=["Recommendation"])
+
+    # Legacy compatibility routes to ease migration from old image-only server paths.
+    @app.post("/predict", tags=["Legacy Compatibility"])
+    async def legacy_image_predict(file: UploadFile = File(...)):
+        return await emotion_image_api.predict(file)
+
+    @app.post("/predict-batch", tags=["Legacy Compatibility"])
+    async def legacy_image_predict_batch(files: List[UploadFile] = File(...)):
+        return await emotion_image_api.predict_batch(files)
     
     # Mount the image API from the emotion component
-    app.mount("/emotion/image-api", image_app)
+    app.mount("/image-api", image_app)
 
     return app
 
